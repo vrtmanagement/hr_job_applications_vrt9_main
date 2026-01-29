@@ -334,8 +334,8 @@ const App: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 py-12 md:py-20">
       <header className="mb-12 flex flex-col items-center md:flex-row md:justify-between border-b border-slate-200/60 pb-10">
         <div className="flex items-center space-x-6 mb-8 md:mb-0">
-          <div className="bg-rose-600 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-200">
-            <i className="fa-solid fa-building-shield text-3xl text-white"></i>
+          <div className="bg-600 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-200">
+            <img src="vrt_logo_cropped.png" alt="" />
           </div>
           <div className="text-center md:text-left">
             <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">VRT Management Group</h1>
