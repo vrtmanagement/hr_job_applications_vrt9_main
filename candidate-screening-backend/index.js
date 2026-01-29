@@ -2,8 +2,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
 
 import Application from './models/Application.js';
 import upload from './middlewares/upload.js';
@@ -14,26 +12,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5050;
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
 // =======================
 // Middleware
 // =======================
 app.use(cors());
 app.use(express.json());
-
-// =======================
-// Optional: clean temp uploads on start
-// =======================
-const uploadsDir = path.join(process.cwd(), 'uploads');
-if (fs.existsSync(uploadsDir)) {
-  fs.readdirSync(uploadsDir).forEach(file => {
-    fs.unlinkSync(path.join(uploadsDir, file));
-  });
-  console.log('🧹 Cleaned uploads directory');
-}
 
 // =======================
 // Health check
@@ -63,13 +46,13 @@ app.post(
       // =======================
       // Upload RESUME (PRIVATE)
       // =======================
-      const resumeBuffer = fs.readFileSync(resumeFile.path);
       const resumePath = `resumes/${Date.now()}-${resumeFile.originalname}`;
 
       const { error: resumeError } = await supabase.storage
         .from('resumes')
-        .upload(resumePath, resumeBuffer, {
+        .upload(resumePath, resumeFile.buffer, {
           contentType: resumeFile.mimetype,
+          upsert: false,
         });
 
       if (resumeError) throw resumeError;
@@ -80,13 +63,13 @@ app.post(
       let roleSpecificFilePath = null;
 
       if (roleSpecificFile) {
-        const roleBuffer = fs.readFileSync(roleSpecificFile.path);
         roleSpecificFilePath = `role-files/${Date.now()}-${roleSpecificFile.originalname}`;
 
         const { error: roleError } = await supabase.storage
           .from('resumes')
-          .upload(roleSpecificFilePath, roleBuffer, {
+          .upload(roleSpecificFilePath, roleSpecificFile.buffer, {
             contentType: roleSpecificFile.mimetype,
+            upsert: false,
           });
 
         if (roleError) throw roleError;
@@ -97,25 +80,19 @@ app.post(
       // =======================
       const application = new Application({
         ...req.body,
-        resumePath: resumePath,
-        roleSpecificFilePath: roleSpecificFilePath,
+        resumePath,
+        roleSpecificFilePath,
       });
 
       await application.save();
-
-      // =======================
-      // Cleanup local temp files
-      // =======================
-      fs.unlinkSync(resumeFile.path);
-      if (roleSpecificFile) fs.unlinkSync(roleSpecificFile.path);
 
       res.status(201).json({
         message: 'Application submitted successfully',
         id: application._id,
       });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: error.message });
+      console.error('❌ Application submission failed:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   }
 );
@@ -140,15 +117,15 @@ app.get('/applications/:id/resume', async (req, res) => {
     res.json({ signedUrl: data.signedUrl });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to generate signed URL' });
   }
 });
 
 // =======================
-// Start server
+// Start server (Railway-safe)
 // =======================
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
 // =======================
