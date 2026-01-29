@@ -237,11 +237,12 @@ const App: React.FC = () => {
       // =========================
       // Submit to backend
       // =========================
-      const response = await fetch('http://127.0.0.1:5050/applications', {
+      const API_URL = import.meta.env.VITE_API_URL;
+
+      const response = await fetch(`${API_URL}/applications`, {
         method: 'POST',
         body: formDataToSend,
       });
-  
       const result = await response.json();
   
       if (!response.ok) {
